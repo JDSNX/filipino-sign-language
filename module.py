@@ -12,8 +12,8 @@ from tensorflow.python.keras.layers import LSTM, Dense
 mp_drawing = mp.solutions.drawing_utils
 mp_holistic = mp.solutions.holistic
 
-
-response = requests.get('https://fsl-config.herokuapp.com/get').json()['configPath']
+user = os.environ.get("username")
+response = requests.get(f'https://fsl-config.herokuapp.com/get?username={user}').json()
 DATA_PATH = os.path.join('mediapipe_data')
 KW_PATH = ""
 no_of_videos = 0
