@@ -66,9 +66,6 @@ def training_testing():
 
                         if cv2.waitKey(10) & 0xFF == ord('q'):
                             break
-            else:
-                print('No new data')
-                return
 
         cap.release()
         cv2.destroyAllWindows()
@@ -153,7 +150,7 @@ def main():
             
             cv2.putText(image, last, (3,30), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 0, 255), 2, cv2.LINE_AA)
         
-            cv2.imshow('Press Q to exit FSL', image)#cv2.resize(image, dsize=None, fx=0.8, fy=0.8))
+            cv2.imshow('Press Q to exit FSL', image)
 
             if cv2.waitKey(10) & 0xFF == ord('q'):
                 print(cv2.getWindowProperty('Press Q to exit FSL', cv2.WND_PROP_VISIBLE))
