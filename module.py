@@ -43,7 +43,7 @@ def mediapipe_detection(image, model):
 
 def get_size(action):
     size = 0
-    for path, dirs, files in os.walk(os.path.join(DATA_PATH, action)):
+    for path, dirs, files in os.walk(f'./{DATA_PATH}/{action}'.strip()):
         for f in files:
             fp = os.path.join(path, f)
             size += os.path.getsize(fp)
