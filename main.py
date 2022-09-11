@@ -38,37 +38,37 @@ cap = cv2.VideoCapture(0)
 def training_testing():
     with mp_holistic.Holistic(min_detection_confidence=0.5, min_tracking_confidence=0.5) as holistic:
         for action in actions:
-            # if get_size(action) == 0:
-            for video in range(no_of_videos):
-                for frame_num in range(frames_of_video):
+            if get_size(action) == 0:
+                for video in range(no_of_videos):
+                    for frame_num in range(frames_of_video):
 
-                    ret, frame = cap.read()
+                        ret, frame = cap.read()
 
-                    image, results = mediapipe_detection(frame, holistic)
-                    draw_landmarks(image, results)
+                        image, results = mediapipe_detection(frame, holistic)
+                        draw_landmarks(image, results)
 
-                    if frame_num == 0: 
-                        cv2.putText(image, 'Collecting...', (120,200), 
-                                cv2.FONT_HERSHEY_SIMPLEX, 1, (0,255, 0), 3, cv2.LINE_AA)
-                        cv2.putText(image, '{} | Video No.: {}'.format(action, video), (15,12), 
-                                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1, cv2.LINE_AA)
+                        if frame_num == 0: 
+                            cv2.putText(image, 'Collecting...', (120,200), 
+                                    cv2.FONT_HERSHEY_SIMPLEX, 1, (0,255, 0), 3, cv2.LINE_AA)
+                            cv2.putText(image, '{} | Video No.: {}'.format(action, video), (15,12), 
+                                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1, cv2.LINE_AA)
 
-                        cv2.imshow('Capture new words', image)
-                        cv2.waitKey(1000)
-                    else: 
-                        cv2.putText(image, '{} | Video No.: {}'.format(action, video), (15,12), 
-                                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1, cv2.LINE_AA)
-                        cv2.imshow('Capture new words', image)
+                            cv2.imshow('Capture new words', image)
+                            cv2.waitKey(1000)
+                        else: 
+                            cv2.putText(image, '{} | Video No.: {}'.format(action, video), (15,12), 
+                                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1, cv2.LINE_AA)
+                            cv2.imshow('Capture new words', image)
 
-                    keypoints = extract_keypoints(results)
-                    npy_path = os.path.join(DATA_PATH, action, str(video), str(frame_num))
-                    np.save(npy_path, keypoints)
+                        keypoints = extract_keypoints(results)
+                        npy_path = os.path.join(DATA_PATH, action, str(video), str(frame_num))
+                        np.save(npy_path, keypoints)
 
-                    if cv2.waitKey(10) & 0xFF == ord('q'):
-                        break
-            # else:
-            #     print('No new data')
-            #     return
+                        if cv2.waitKey(10) & 0xFF == ord('q'):
+                            break
+            else:
+                print('No new data')
+                return
 
         cap.release()
         cv2.destroyAllWindows()
@@ -111,6 +111,7 @@ def preprocess_data():
 
 def main():
     model = load_model(MODEL)
+    translation = get_translation()
 
     sequence = []
     sentence = []
@@ -148,13 +149,14 @@ def main():
             last = ""
             if len(sentence) > 0:
                 last = sentence.pop()
-
+                last = translation[last]
+            
             cv2.putText(image, last, (3,30), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 0, 255), 2, cv2.LINE_AA)
         
-            cv2.imshow('OpenCV Feed', image)#cv2.resize(image, dsize=None, fx=0.8, fy=0.8))
+            cv2.imshow('Press Q to exit FSL', image)#cv2.resize(image, dsize=None, fx=0.8, fy=0.8))
 
             if cv2.waitKey(10) & 0xFF == ord('q'):
-                print(cv2.getWindowProperty('OpenCV Feed', cv2.WND_PROP_VISIBLE))
+                print(cv2.getWindowProperty('Press Q to exit FSL', cv2.WND_PROP_VISIBLE))
                 break
 
         cap.release()
