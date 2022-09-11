@@ -64,8 +64,15 @@ def extract_keypoints(results):
 def get_keywords():
     create_csv()
     with open(KW_PATH) as f:
-        reader = csv.reader(f)
-        return np.array([col for row in reader for col in row])
+        return np.array([line.split(',')[0] for line in f])
+
+def get_translation():
+    data = {}
+    with open(KW_PATH) as f:
+        for rows in f:
+            s = rows.split(',')
+            data[s[0].strip()] = s[1].strip()
+    return data
 
 def create_csv():
     if not os.path.exists(KW_PATH):
