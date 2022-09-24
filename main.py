@@ -1,174 +1,161 @@
-"""Sign Language Recognition.
-This tool will help you perform various actions.
-They are: run, train, new_word
-
-Usage:
-    main.py run
-    main.py train
-    main.py new_word
-    main.py -h | --help
-    main.py --version
-
-Options:
-    -h --help   Shows this extra help options
-    --version   Show version.
-"""
-
 import cv2
 import numpy as np
 import os
-
+import sys
+    
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 from module import *
-from docopt import docopt
 from sklearn.model_selection import train_test_split
 from keras.utils import to_categorical
 from keras.models import load_model
 from tensorflow.python.keras.models import Sequential
 from tensorflow.python.keras.callbacks import TensorBoard
 
+class SignLanguage:
 
-init()
+    def __init__(self, video_channel=None, threshold=0.5):
+        init()
+        self.video_channel = 0 if video_channel is None else video_channel
+        self.actions = np.array(get_keywords())
+        self.translation = get_translation()
+        self.threshold = threshold
 
-actions = np.array(get_keywords())
+    def new_word(self):
+        cap = cv2.VideoCapture(self.video_channel)
 
-cap = cv2.VideoCapture(0)
+        with mp_holistic.Holistic(min_detection_confidence=0.5, min_tracking_confidence=0.5) as holistic:
+            for action in self.actions:
+                if get_size(action) == 0:
+                    for video in range(no_of_videos):
+                        for frame_num in range(frames_of_video):
 
-def training_testing():
-    with mp_holistic.Holistic(min_detection_confidence=0.5, min_tracking_confidence=0.5) as holistic:
-        for action in actions:
-            if get_size(action) == 0:
-                for video in range(no_of_videos):
-                    for frame_num in range(frames_of_video):
+                            ret, frame = cap.read()
 
-                        ret, frame = cap.read()
+                            image, results = mediapipe_detection(frame, holistic)
+                            draw_landmarks(image, results)
 
-                        image, results = mediapipe_detection(frame, holistic)
-                        draw_landmarks(image, results)
+                            if frame_num == 0: 
+                                cv2.putText(image, 'Collecting...', (120,200), 
+                                        cv2.FONT_HERSHEY_SIMPLEX, 1, (0,255, 0), 3, cv2.LINE_AA)
+                                cv2.putText(image, '{} | Video No.: {}'.format(action, video), (15,12), 
+                                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1, cv2.LINE_AA)
 
-                        if frame_num == 0: 
-                            cv2.putText(image, 'Collecting...', (120,200), 
-                                    cv2.FONT_HERSHEY_SIMPLEX, 1, (0,255, 0), 3, cv2.LINE_AA)
-                            cv2.putText(image, '{} | Video No.: {}'.format(action, video), (15,12), 
-                                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1, cv2.LINE_AA)
+                                cv2.imshow('Capture new words', image)
+                                cv2.waitKey(1000)
+                            else: 
+                                cv2.putText(image, '{} | Video No.: {}'.format(action, video), (15,12), 
+                                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1, cv2.LINE_AA)
+                                cv2.imshow('Capture new words', image)
 
-                            cv2.imshow('Capture new words', image)
-                            cv2.waitKey(1000)
-                        else: 
-                            cv2.putText(image, '{} | Video No.: {}'.format(action, video), (15,12), 
-                                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1, cv2.LINE_AA)
-                            cv2.imshow('Capture new words', image)
+                            keypoints = extract_keypoints(results)
+                            npy_path = os.path.join(DATA_PATH, action, str(video), str(frame_num))
+                            np.save(npy_path, keypoints)
 
-                        keypoints = extract_keypoints(results)
-                        npy_path = os.path.join(DATA_PATH, action, str(video), str(frame_num))
-                        np.save(npy_path, keypoints)
+                            if cv2.waitKey(10) & 0xFF == ord('q'):
+                                break
 
-                        if cv2.waitKey(10) & 0xFF == ord('q'):
-                            break
+                cap.release()
+                cv2.destroyAllWindows()
 
         cap.release()
         cv2.destroyAllWindows()
 
-    cap.release()
-    cv2.destroyAllWindows()
+    def preprocess_data(self):
+        label_map = {label:num for num, label in enumerate(self.actions)}
+        log_dir = os.path.join('Logs')
+        tb_callback = TensorBoard(log_dir=log_dir)
 
-def preprocess_data():
-    label_map = {label:num for num, label in enumerate(actions)}
-    log_dir = os.path.join('Logs')
-    tb_callback = TensorBoard(log_dir=log_dir)
+        sequences, labels = [], []
+        for action in self.actions:
+            for sequence in np.array(os.listdir(os.path.join(DATA_PATH, action))).astype(int):
+                window = []
+                for frame_num in range(frames_of_video):
+                    res = np.load(os.path.join(DATA_PATH, action, str(sequence), "{}.npy".format(frame_num)))
+                    window.append(res)
+                sequences.append(window)
+                labels.append(label_map[action])
 
-    sequences, labels = [], []
+        X = np.array(sequences)
+        y = to_categorical(labels).astype(int)
 
-    for action in actions:
-        for sequence in np.array(os.listdir(os.path.join(DATA_PATH, action))).astype(int):
-            window = []
-            for frame_num in range(frames_of_video):
-                res = np.load(os.path.join(DATA_PATH, action, str(sequence), "{}.npy".format(frame_num)))
-                window.append(res)
-            sequences.append(window)
-            labels.append(label_map[action])
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.05)
 
-    X = np.array(sequences)
-    y = to_categorical(labels).astype(int)
+        # Build network
+        model = Sequential()
+        model.add(LSTM(64, return_sequences=True, activation='relu', input_shape=(30,1662)))
+        model.add(LSTM(128, return_sequences=True, activation='relu'))
+        model.add(LSTM(64, return_sequences=False, activation='relu'))
+        model.add(Dense(64, activation='relu'))
+        model.add(Dense(32, activation='relu'))
+        model.add(Dense(self.actions.shape[0], activation='softmax'))
+        model.compile(optimizer='Adam', loss='categorical_crossentropy', metrics=['categorical_accuracy'])
+        model.fit(X_train, y_train, epochs=2000, callbacks=[tb_callback])
+        model.save(MODEL)   
 
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.05)
+    def main(self):
+        cap = cv2.VideoCapture(self.video_channel)
+        model = load_model(MODEL)
+        sequence = []
+        sentence = []
+        predictions = []
 
-    # Build network
-    model = Sequential()
-    model.add(LSTM(64, return_sequences=True, activation='relu', input_shape=(30,1662)))
-    model.add(LSTM(128, return_sequences=True, activation='relu'))
-    model.add(LSTM(64, return_sequences=False, activation='relu'))
-    model.add(Dense(64, activation='relu'))
-    model.add(Dense(32, activation='relu'))
-    model.add(Dense(actions.shape[0], activation='softmax'))
-    model.compile(optimizer='Adam', loss='categorical_crossentropy', metrics=['categorical_accuracy'])
-    model.fit(X_train, y_train, epochs=2000, callbacks=[tb_callback])
-    model.save(MODEL)   
+        with mp_holistic.Holistic(min_detection_confidence=0.5, min_tracking_confidence=0.5) as holistic:
+            while cap.isOpened():
+                ret, frame = cap.read()
 
-def main():
-    model = load_model(MODEL)
-    translation = get_translation()
+                if not ret:
+                    break
 
-    sequence = []
-    sentence = []
-    predictions = []
-    threshold = 0.5
+                image, results = mediapipe_detection(frame, holistic)
+                            
+                keypoints = extract_keypoints(results)
+                sequence.append(keypoints)
+                sequence = sequence[-30:]
 
-    cap = cv2.VideoCapture(0)
-    
-    with mp_holistic.Holistic(min_detection_confidence=0.5, min_tracking_confidence=0.5) as holistic:
-        while cap.isOpened():
-            ret, frame = cap.read()
+                if len(sequence) == 30:
+                    res = model.predict(np.expand_dims(sequence, axis=0), verbose=0)[0]
+                    s = predictions.append(np.argmax(res))
+                    
+                    if np.unique(predictions[-10:])[0]==np.argmax(res): 
+                        if res[np.argmax(res)] > self.threshold: 
+                            
+                            if len(sentence) > 0: 
+                                if self.actions[np.argmax(res)] != sentence[-1]:
+                                    sentence.append(self.actions[np.argmax(res)])
+                            else:
+                                sentence.append(self.actions[np.argmax(res)])
 
-            image, results = mediapipe_detection(frame, holistic)
-                        
-            keypoints = extract_keypoints(results)
-            sequence.append(keypoints)
-            sequence = sequence[-30:]
+                    if len(sentence) > 5: 
+                        sentence = sentence[-1]
 
-            if len(sequence) == 30:
-                res = model.predict(np.expand_dims(sequence, axis=0), verbose=0)[0]
-                s = predictions.append(np.argmax(res))
+                last = ""
+                if len(sentence) > 0:
+                    last = sentence.pop()
+                    last = self.translation[last]
                 
-                if np.unique(predictions[-10:])[0]==np.argmax(res): 
-                    if res[np.argmax(res)] > threshold: 
-                        
-                        if len(sentence) > 0: 
-                            if actions[np.argmax(res)] != sentence[-1]:
-                                sentence.append(actions[np.argmax(res)])
-                        else:
-                            sentence.append(actions[np.argmax(res)])
-
-                if len(sentence) > 5: 
-                    sentence = sentence[-1]
-
-            last = ""
-            if len(sentence) > 0:
-                last = sentence.pop()
-                last = translation[last]
+                cv2.putText(image, last, (3,30), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 0, 255), 2, cv2.LINE_AA)
             
-            cv2.putText(image, last, (3,30), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 0, 255), 2, cv2.LINE_AA)
+                cv2.imshow('Press Q to exit FSL', image)
+
+                if cv2.waitKey(10) & 0xFF == ord('q'):
+                    print(cv2.getWindowProperty('Press Q to exit FSL', cv2.WND_PROP_VISIBLE))
+                    break
+
+            cap.release()
+            cv2.destroyAllWindows()
         
-            cv2.imshow('Press Q to exit FSL', image)
 
-            if cv2.waitKey(10) & 0xFF == ord('q'):
-                print(cv2.getWindowProperty('Press Q to exit FSL', cv2.WND_PROP_VISIBLE))
-                break
+if __name__ == '__main__':
+    args = sys.argv[1]
 
-        cap.release()
-        cv2.destroyAllWindows()
+    fsl = SignLanguage()
 
-if __name__ == "__main__":
-    args = docopt(__doc__, version='Sign Language Recognition v1.00.0')
+    if args == 'run':
+        fsl.main()
 
-    os.system('cls')
+    elif args == 'train':
+        fsl.preprocess_data()
 
-    if args['run']:
-        main()
-    
-    elif args['train']:
-        preprocess_data()
-
-    elif args['new_word']:
-        training_testing()
+    elif args == 'new_word':
+        fsl.new_word()
