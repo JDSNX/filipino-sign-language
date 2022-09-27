@@ -12,6 +12,8 @@ from tensorflow.python.keras.layers import LSTM, Dense
 mp_drawing = mp.solutions.drawing_utils
 mp_holistic = mp.solutions.holistic
 
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+
 user = os.environ.get("username")
 response = requests.get(f'https://fsl-config.herokuapp.com/get?username={user}').json()
 DATA_PATH = os.path.join('mediapipe_data')
@@ -70,8 +72,8 @@ def get_translation():
     data = {}
     with open(KW_PATH) as f:
         for rows in f:
-            s = rows.split(',')
-            data[s[0].strip()] = s[1].strip()
+            s = rows.strip().split(',')
+            data[s[0]] = s[1]
     return data
 
 def create_csv():
