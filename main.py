@@ -16,7 +16,7 @@ class SignLanguage:
 
     def __init__(self, video_channel=None, threshold=0.5):
         init()
-        self.video_channel = 0 if video_channel is None else video_channel
+        self.video_channel = video_channel
         self.actions = np.array(get_keywords())
         self.translation = get_translation()
         self.threshold = threshold
@@ -149,7 +149,7 @@ class SignLanguage:
 if __name__ == '__main__':
     args = sys.argv[1]
 
-    fsl = SignLanguage()
+    fsl = SignLanguage(0)
 
     if args == 'run':
         fsl.main()
