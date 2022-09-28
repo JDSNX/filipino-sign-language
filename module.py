@@ -14,23 +14,23 @@ class Module:
     def __init__(self):
         self.DATA_PATH='mediapipe_data'
         self.MODEL='model.h5'
-        self.KW_PATH = ""
+        self.KW_PATH = f"C:\\Users\\judis\\AppData\\Local\\FSL\\FSL_Url_gx1zzqp5v2mrfnm5flx2k1sy5tbzkc0b\\1.0.0.0\\user.config"
         self.no_of_videos = 0
         self.frames_of_video = 0
 
         self.mp_drawing = mp.solutions.drawing_utils
         self.mp_holistic = mp.solutions.holistic
 
-        user = os.environ.get("username")
-        response = requests.get(os.getenv('GET_USER') + f'={user}')
+        # user = os.environ.get("username")
+        # response = requests.get(os.getenv('GET_USER') + f'={user}')
         
-        try:
-            response.raise_for_status()
-        except requests.exceptions.HTTPError:
-            print("-- HTTP ERROR --")
-        else:
-            if not os.path.exists(response):
-                response = response.replace('Roaming', 'Local')
+        # try:
+        #     response.raise_for_status()
+        # except requests.exceptions.HTTPError:
+        #     print("-- HTTP ERROR --")
+        # else:
+        #     if not os.path.exists(response):
+        #         response = response.replace('Roaming', 'Local')
 
         root = et.parse(self.KW_PATH).getroot()
 
@@ -78,8 +78,10 @@ class Module:
         data = {}
         with open(self.KW_PATH) as f:
             for rows in f:
-                s = rows.strip().split(',')
-                data[s[0]] = s[1]
+                if not rows == '':
+                    s = rows.strip().split(',')
+                    if len(s) > 1:
+                        data[s[0]] = s[1]
         return data
 
     def create_csv(self):
