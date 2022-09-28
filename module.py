@@ -21,18 +21,7 @@ class Module:
         self.mp_drawing = mp.solutions.drawing_utils
         self.mp_holistic = mp.solutions.holistic
 
-        user = os.environ.get("username")
-        response = requests.get(os.getenv('GET_USER') + f'={user}')
-        
-        try:
-            response.raise_for_status()
-        except requests.exceptions.HTTPError:
-            print("-- HTTP ERROR --")
-        else:
-            if not os.path.exists(response):
-                response = response.replace('Roaming', 'Local')
-
-        root = et.parse(self.KW_PATH).getroot()
+        root = et.parse(os.getenv('GET_USER')).getroot()
 
         for item in root.iter('setting'):
             cfg = item.items()[0][1]
@@ -78,8 +67,10 @@ class Module:
         data = {}
         with open(self.KW_PATH) as f:
             for rows in f:
-                s = rows.strip().split(',')
-                data[s[0]] = s[1]
+                if not rows == '':
+                    s = rows.strip().split(',')
+                    if len(s) > 1:
+                        data[s[0]] = s[1]
         return data
 
     def create_csv(self):
