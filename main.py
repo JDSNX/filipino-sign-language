@@ -74,13 +74,14 @@ class SignLanguage(Module):
 
         sequences, labels = [], []
         for action in self.actions:
-            for sequence in np.array(os.listdir(os.path.join(self.DATA_PATH, action))).astype(int):
-                window = []
-                for frame_num in range(self.frames_of_video):
-                    res = np.load(os.path.join(self.DATA_PATH, action, str(sequence), "{}.npy".format(frame_num)))
-                    window.append(res)
-                sequences.append(window)
-                labels.append(label_map[action])
+            if not action.strip() == '':
+                for sequence in np.array(os.listdir(os.path.join(self.DATA_PATH, action))).astype(int):
+                    window = []
+                    for frame_num in range(self.frames_of_video):
+                        res = np.load(os.path.join(self.DATA_PATH, action, str(sequence), "{}.npy".format(frame_num)))
+                        window.append(res)
+                    sequences.append(window)
+                    labels.append(label_map[action])
 
         X = np.array(sequences)
         y = to_categorical(labels).astype(int)
