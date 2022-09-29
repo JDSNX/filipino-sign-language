@@ -27,35 +27,36 @@ class SignLanguage(Module):
                 print('No new words')
    
             for action in tmp_actions:
-                for video in range(self.no_of_videos):
-                    for frame_num in range(self.frames_of_video):
-                        ret, frame = cap.read()
-                        
-                        if not ret:
-                            break
+                if not action.strip() == '':
+                    for video in range(self.no_of_videos):
+                        for frame_num in range(self.frames_of_video):
+                            ret, frame = cap.read()
+                            
+                            if not ret:
+                                break
 
-                        image, results = self.mediapipe_detection(frame, holistic)
-                        self.draw_landmarks(image, results)
+                            image, results = self.mediapipe_detection(frame, holistic)
+                            self.draw_landmarks(image, results)
 
-                        if frame_num == 0: 
-                            cv2.putText(image, 'Collecting...', (120,200), 
-                                    cv2.FONT_HERSHEY_SIMPLEX, 1, (0,255, 0), 3, cv2.LINE_AA)
-                            cv2.putText(image, '{} | Video No.: {}'.format(action, video), (15,12), 
-                                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1, cv2.LINE_AA)
+                            if frame_num == 0: 
+                                cv2.putText(image, 'Collecting...', (120,200), 
+                                        cv2.FONT_HERSHEY_SIMPLEX, 1, (0,255, 0), 3, cv2.LINE_AA)
+                                cv2.putText(image, '{} | Video No.: {}'.format(action, video), (15,12), 
+                                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1, cv2.LINE_AA)
 
-                            cv2.imshow('Capture new words', image)
-                            cv2.waitKey(1000)
-                        else: 
-                            cv2.putText(image, '{} | Video No.: {}'.format(action, video), (15,12), 
-                                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1, cv2.LINE_AA)
-                            cv2.imshow('Capture new words', image)
+                                cv2.imshow('Capture new words', image)
+                                cv2.waitKey(1000)
+                            else: 
+                                cv2.putText(image, '{} | Video No.: {}'.format(action, video), (15,12), 
+                                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1, cv2.LINE_AA)
+                                cv2.imshow('Capture new words', image)
 
-                        keypoints = self.extract_keypoints(results)
-                        npy_path = os.path.join(self.DATA_PATH, action, str(video), str(frame_num))
-                        np.save(npy_path, keypoints)
+                            keypoints = self.extract_keypoints(results)
+                            npy_path = os.path.join(self.DATA_PATH, action, str(video), str(frame_num))
+                            np.save(npy_path, keypoints)
 
-                        if cv2.waitKey(10) & 0xFF == ord('q'):
-                            break
+                            if cv2.waitKey(10) & 0xFF == ord('q'):
+                                break
 
         cap.release()
         cv2.destroyAllWindows()
