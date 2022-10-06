@@ -9,6 +9,9 @@ from module import Module
 
 class SignLanguage(Module):
 
+    cv2.namedWindow('Press Q to exit FSL', cv2.WND_PROP_FULLSCREEN)
+    cv2.setWindowProperty('Press Q to exit FSL', cv2.WND_PROP_FULLSCREEN,cv2.WINDOW_FULLSCREEN)
+
     def __init__(self, video_channel=None, threshold=0.5):
         super().__init__()
         self.init()
