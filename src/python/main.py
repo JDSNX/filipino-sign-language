@@ -16,6 +16,7 @@ class SignLanguage(Module):
         self.actions = np.array(self.get_keywords())
         self.translation = self.get_translation()
         self.threshold = threshold
+        
 
     def new_word(self):
         cap = cv2.VideoCapture(self.video_channel)
@@ -61,6 +62,7 @@ class SignLanguage(Module):
         cap.release()
         cv2.destroyAllWindows()
 
+
     def preprocess_data(self):
         from sklearn.model_selection import train_test_split
         from keras.utils import to_categorical
@@ -100,8 +102,12 @@ class SignLanguage(Module):
         model.fit(X_train, y_train, epochs=2000, callbacks=[tb_callback])
         model.save(self.MODEL)   
 
+
     def main(self):
-        from keras.models import load_model
+        from keras.models import load_model        
+
+        cv2.namedWindow('Press Q to exit FSL', cv2.WND_PROP_FULLSCREEN)
+        cv2.setWindowProperty('Press Q to exit FSL', cv2.WND_PROP_FULLSCREEN,cv2.WINDOW_FULLSCREEN)
         
         cap = cv2.VideoCapture(self.video_channel)
         model = load_model(self.MODEL)
